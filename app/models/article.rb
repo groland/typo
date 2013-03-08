@@ -95,6 +95,38 @@ class Article < Content
   include Article::States
 
   class << self
+    def merge_articles(art1_id, art2_id)
+puts "art1_id=" + art1_id 
+puts "art2_id=" + art2_id 
+      art1 = Article.find(art1_id)
+      art2 = Article.find(art2_id)
+      if (art2 == nil )
+        false
+      end
+      body = art1.body + art2.body
+puts "body=" + body 
+# TODO published_at
+      art_new = Article.create(:title => art1.title, :author => art1.author, 
+          :user_id => art1.user_id, :body => body, :published => true, :allow_comments => true)
+      art1_feedbacks = Feedback.find_all_by_article_id(art1_id)
+      art2_feedbacks = Feedback.find_all_by_article_id(art2_id)
+      if not art1_feedbacks.blank?
+        art1_feedbacks.each do |feedback|
+          feedback.article_id = art_new.id
+          feedback.save
+        end
+      end
+      if not art2_feedbacks.blank?
+        art2_feedbacks.each do |feedback|
+          feedback.article_id = art_new.id
+          feedback.save
+        end
+      end
+      Article.destroy(art1_id)
+      Article.destroy(art2_id)
+      art_new
+    end
+
     def last_draft(article_id)
       article = Article.find(article_id)
       while article.has_child?
